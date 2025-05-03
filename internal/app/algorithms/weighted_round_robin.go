@@ -21,6 +21,11 @@ func (r *WeightedRoundRobin) Name() string {
 }
 
 func (r *WeightedRoundRobin) GetNextBackend(backends []*backend.Backend) *backend.Backend {
+	/**
+	TODO возможно не нужно всей этой работы с добавлением/удалением бекендов.
+	Лучше при запуске создать сразу весь список бекендов и отправлять по ним так же как и в обычном RR алгоритме
+	*/
+
 	r.mutex.Lock()
 	backendsCount := len(backends)
 
