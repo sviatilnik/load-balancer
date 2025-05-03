@@ -3,6 +3,7 @@ package app
 import (
 	"load-balancer/internal/app/algorithms"
 	"load-balancer/internal/app/backend"
+	"log"
 	"net/http"
 )
 
@@ -31,6 +32,8 @@ func (l *LoadBalancer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if back == nil {
 		http.Error(w, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
 	}
+
+	log.Println("ServeHTTP")
 
 	back.Proxy.ServeHTTP(w, r)
 }

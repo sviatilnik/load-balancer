@@ -27,9 +27,9 @@ func main() {
 
 	backendsList := strings.Split(*backends, ",")
 
-	balancer := app.NewLoadBalancer(&algorithms.RoundRobin{})
+	balancer := app.NewLoadBalancer(&algorithms.WeightedRoundRobin{})
 
-	for _, back := range backendsList {
+	for i, back := range backendsList {
 		u, err := url.Parse(back)
 		if err != nil {
 			log.Fatal(err)
@@ -41,7 +41,7 @@ func main() {
 			http.Error(writer, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
 		}
 
-		balancer.AddBackend(backend.NewBackend(u, proxy))
+		balancer.AddBackend(backend.NewBackend(u, proxy, uint(i+1)))
 	}
 
 	healthcheck := &tools.HealthChecker{

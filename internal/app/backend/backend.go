@@ -7,17 +7,19 @@ import (
 )
 
 type Backend struct {
-	URL   *url.URL
-	alive bool
-	mux   sync.RWMutex
-	Proxy *httputil.ReverseProxy
+	URL    *url.URL
+	alive  bool
+	mux    sync.RWMutex
+	Proxy  *httputil.ReverseProxy
+	Weight uint
 }
 
-func NewBackend(url *url.URL, proxy *httputil.ReverseProxy) *Backend {
+func NewBackend(url *url.URL, proxy *httputil.ReverseProxy, weight uint) *Backend {
 	return &Backend{
-		URL:   url,
-		alive: true,
-		Proxy: proxy,
+		URL:    url,
+		alive:  true,
+		Proxy:  proxy,
+		Weight: weight,
 	}
 }
 
