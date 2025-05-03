@@ -2,10 +2,18 @@ package algorithms
 
 import (
 	"load-balancer/internal/app/backend"
+	"sync"
 )
 
 type WeightedRoundRobin struct {
-	pool []*backend.Backend
+	pool  []*backend.Backend
+	mutex sync.RWMutex
+}
+
+func NewWeightedRoundRobin() *WeightedRoundRobin {
+	return &WeightedRoundRobin{
+		pool: make([]*backend.Backend, 0),
+	}
 }
 
 func (r *WeightedRoundRobin) Name() string {
@@ -13,6 +21,7 @@ func (r *WeightedRoundRobin) Name() string {
 }
 
 func (r *WeightedRoundRobin) GetNextBackend(backends []*backend.Backend) *backend.Backend {
+	r.mutex.Lock()
 	backendsCount := len(backends)
 
 	if backendsCount == 0 {
@@ -44,6 +53,7 @@ func (r *WeightedRoundRobin) GetNextBackend(backends []*backend.Backend) *backen
 		}
 	}
 	r.pool = filteredPool
+	r.mutex.Unlock()
 
 	return resultBackend
 }

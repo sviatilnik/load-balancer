@@ -17,13 +17,12 @@ type Backend struct {
 }
 
 func NewBackend(url *url.URL, weight uint) *Backend {
-
 	proxy := httputil.NewSingleHostReverseProxy(url)
 	proxy.ErrorHandler = func(writer http.ResponseWriter, request *http.Request, e error) {
 		log.Println(e.Error())
 		http.Error(writer, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
 	}
-	
+
 	return &Backend{
 		URL:    url,
 		alive:  true,
