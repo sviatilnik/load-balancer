@@ -1,6 +1,8 @@
 package backend
 
 import (
+	"log"
+	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"sync"
@@ -14,7 +16,14 @@ type Backend struct {
 	Weight uint
 }
 
-func NewBackend(url *url.URL, proxy *httputil.ReverseProxy, weight uint) *Backend {
+func NewBackend(url *url.URL, weight uint) *Backend {
+
+	proxy := httputil.NewSingleHostReverseProxy(url)
+	proxy.ErrorHandler = func(writer http.ResponseWriter, request *http.Request, e error) {
+		log.Println(e.Error())
+		http.Error(writer, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
+	}
+	
 	return &Backend{
 		URL:    url,
 		alive:  true,

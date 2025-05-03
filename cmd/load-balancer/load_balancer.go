@@ -1,49 +1,29 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"load-balancer/internal/app"
-	"load-balancer/internal/app/algorithms"
-	"load-balancer/internal/app/backend"
 	"load-balancer/internal/app/tools"
 	"log"
 	"net/http"
-	"net/http/httputil"
-	"net/url"
-	"strings"
 	"time"
 )
 
 func main() {
-	port := flag.Int("port", 8080, "listening port")
-	backends := flag.String("backends", "", "comma-separated list of backend addresses")
-	flag.Parse()
+	config := app.NewConfig()
 
-	if len(*backends) == 0 {
-		log.Println("at least one backend address is required")
-		return
+	balancer := app.NewLoadBalancer(config.Algorithm, config.Backends)
+
+	setHealthChecker(balancer)
+
+	log.Printf("Load Balancer starting at: %d\n", config.Port)
+
+	if err := http.ListenAndServe(fmt.Sprintf(":%d", config.Port), balancer); err != nil {
+		log.Fatal(err)
 	}
+}
 
-	backendsList := strings.Split(*backends, ",")
-
-	balancer := app.NewLoadBalancer(&algorithms.WeightedRoundRobin{})
-
-	for i, back := range backendsList {
-		u, err := url.Parse(back)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		proxy := httputil.NewSingleHostReverseProxy(u)
-		proxy.ErrorHandler = func(writer http.ResponseWriter, request *http.Request, e error) {
-			log.Println(e.Error())
-			http.Error(writer, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
-		}
-
-		balancer.AddBackend(backend.NewBackend(u, proxy, uint(i+1)))
-	}
-
+func setHealthChecker(balancer *app.LoadBalancer) {
 	healthcheck := &tools.HealthChecker{
 		TimeOut:  2 * time.Second,
 		Backends: balancer.Backends(),
@@ -52,15 +32,4 @@ func main() {
 	healthcheck.Check()
 
 	go healthcheck.CheckWithPeriod(1 * time.Minute)
-
-	server := &http.Server{
-		Addr:    fmt.Sprintf(":%d", *port),
-		Handler: balancer,
-	}
-
-	log.Printf("Load Balancer started at: %d\n", *port)
-
-	if err := server.ListenAndServe(); err != nil {
-		log.Fatal(err)
-	}
 }

@@ -12,9 +12,9 @@ type LoadBalancer struct {
 	algorithm algorithms.Algorithm
 }
 
-func NewLoadBalancer(algorithm algorithms.Algorithm) *LoadBalancer {
+func NewLoadBalancer(algorithm algorithms.Algorithm, backends []*backend.Backend) *LoadBalancer {
 	return &LoadBalancer{
-		backends:  make([]*backend.Backend, 0),
+		backends:  backends,
 		algorithm: algorithm,
 	}
 }
@@ -27,13 +27,17 @@ func (l *LoadBalancer) Backends() []*backend.Backend {
 	return l.backends
 }
 
+func (l *LoadBalancer) SetBackends(backends []*backend.Backend) {
+	l.backends = backends
+}
+
 func (l *LoadBalancer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	back := l.algorithm.GetNextBackend(l.backends)
 	if back == nil {
 		http.Error(w, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
+		log.Println("No available backends")
+		return
 	}
-
-	log.Println("ServeHTTP")
 
 	back.Proxy.ServeHTTP(w, r)
 }
