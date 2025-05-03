@@ -1,7 +1,6 @@
 package algorithms
 
 import (
-	"fmt"
 	"load-balancer/internal/app/backend"
 )
 
@@ -28,7 +27,6 @@ func (r *WeightedRoundRobin) GetNextBackend(backends []*backend.Backend) *backen
 			}
 		}
 	}
-	fmt.Println(r.pool)
 
 	var resultBackend *backend.Backend
 	for i, b := range r.pool {
