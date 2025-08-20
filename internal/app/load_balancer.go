@@ -33,6 +33,7 @@ func (l *LoadBalancer) SetBackends(backends []*backend.Backend) {
 
 func (l *LoadBalancer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	back := l.algorithm.GetNextBackend(l.backends)
+	// TODO add retry
 	if back == nil {
 		http.Error(w, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
 		log.Println("No available backends")

@@ -1,11 +1,16 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"load-balancer/internal/app"
 	"load-balancer/internal/app/tools"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 )
 
@@ -16,9 +21,26 @@ func main() {
 
 	setHealthChecker(balancer)
 
-	log.Printf("Load Balancer starting at: %d\n", config.Port)
+	shutdown := make(chan os.Signal, 1)
+	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
 
-	if err := http.ListenAndServe(fmt.Sprintf(":%d", config.Port), balancer); err != nil {
+	server := http.Server{
+		Addr:    fmt.Sprintf(":%d", config.Port),
+		Handler: balancer,
+	}
+
+	go func() {
+		log.Printf("Starting balancer on port %d\n", config.Port)
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("listen: %s\n", err)
+		}
+	}()
+
+	<-shutdown
+	log.Println("Shutting down balancer...")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := server.Shutdown(ctx); err != nil {
 		log.Fatal(err)
 	}
 }

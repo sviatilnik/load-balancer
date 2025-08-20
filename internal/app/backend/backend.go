@@ -23,6 +23,10 @@ func NewBackend(url *url.URL, weight uint) *Backend {
 		http.Error(writer, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
 	}
 
+	if weight == 0 {
+		weight = 1
+	}
+
 	return &Backend{
 		URL:    url,
 		alive:  true,
